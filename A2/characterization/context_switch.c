@@ -8,8 +8,8 @@
 #define NUM_SWITCHES 100000
 
 int main() {
-  int fd_pc[2];
-  int fd_cp[2];
+  int fd_pc[2]; // parent to child pipe
+  int fd_cp[2]; // child to parent pipe
 
   char val = '0';
   struct timespec start, end;

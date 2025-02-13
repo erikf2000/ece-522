@@ -6,8 +6,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#define TRIGGER_PIN 17
-#define ROUNDS 10
+#define PIN 17
 
 volatile uint32_t start_time = 0;
 volatile uint32_t end_time = 0;
@@ -21,19 +20,19 @@ void callback(int gpio, int level, uint32_t tick) {
 }
 
 int main() {
-  if (gpioInitialise() < 0) {
+  if (gpioInitialise() < 0) { // initialize GPIO
     printf("Gpio initialization failed \n");
     return -1;
   }
 
-  gpioSetMode(TRIGGER_PIN, PI_INPUT);
-  gpioSetAlertFunc(TRIGGER_PIN, callback);
+  gpioSetMode(PIN, PI_INPUT);
+  gpioSetAlertFunc(PIN, callback);
 
   start_time = gpioTick();
 
-  gpioWrite(TRIGGER_PIN, 1);
+  gpioWrite(PIN, 1);
   gpioDelay(1000);
-  gpioWrite(TRIGGER_PIN, 0);
+  gpioWrite(PIN, 0);
 
   gpioTerminate();
 
