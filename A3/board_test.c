@@ -1,5 +1,10 @@
+#include <ctype.h>
+#include <fcntl.h>
 #include <pigpio.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
+#include <termios.h>
 #include <unistd.h>
 
 #define SPI_CHANNEL 1 // Equivalent to spi.open(0,1) in Python
@@ -13,11 +18,91 @@
 
 int spiHandle;
 
+struct timespec ts;
+
+void ppCMD1(int addr, int cmd, int param1, int param2) {
+  unsigned char arg[4] = {addr, cmd, param1, param2};
+  unsigned char resp[4] = {0}; // Unused, but could store response
+
+  gpioWrite(PP_FRAME, 1); // FRAME high
+  printf("Sending args: %d %d %d %d\n", arg[0], arg[1], arg[2], arg[3]);
+
+  spiXfer(spiHandle, (char *)arg, (char *)resp, 4); // 4-byte SPI transfer
+  gpioDelay(40);
+
+  gpioWrite(PP_FRAME, 0); // FRAME low
+  nanosleep(&ts, NULL);   // Delay (0.0003 sec)
+}
+
+void preamble(int motor, double speed, int acceleration, char *dir) {
+  ppCMD1(16, 48, 1, 64); // setup
+  ppCMD1(16, 58, 0, 66); // setup
+
+  int param1;
+  int param2;
+
+  int motorSpeed = (int)((speed * 1023 / 100) + 0.5);
+  if (motor == 0 || motor == 1) {
+    motorSpeed = (motorSpeed * 5) >> 3;
+  }
+
+  param1 = motor << 6;
+  if (strncmp(dir, "cw", 3) == 0) {
+    param1 = param1 + 0x10;
+  }
+  param1 += (motorSpeed >> 8);
+  param2 = motorSpeed & 0x00FF;
+  ppCMD1(16, 0x30, param1, param2);
+
+  // speed = int((speed*1023/100)+0.5)
+  // if ((motor==1)or(motor==2)):
+  //     speed=(speed*5)>>3
+  // // Param1:|motor num 1|motor num 0|NA|direction|NA|NA|dc9|dc8|
+  // param1=(motor-1)<<6
+  // if dir=='cw':
+  //     param1=param1+0x10
+  // param1=param1+(speed>>8)
+  // param2= speed & 0x00FF
+  // ppCMDm(addr,0x30,param1,param2,0)
+}
+
+void start(int motor) {
+  ppCMD1(16, 49, 0, 0); // start
+}
+
+void stop(int motor) {
+  ppCMD1(16, 50, 0, 0); // stop
+}
+
+void speed(int motor, double speed) {
+  int param1;
+  int param2;
+  int motorSpeed = (int)((speed * 1023 / 100) + 0.5);
+  if (motor == 0 || motor == 1) {
+    motorSpeed = (motorSpeed * 5) >> 3;
+  }
+  param1 = motor << 6;
+  param1 += (motorSpeed >> 8);
+  param2 = motorSpeed & 0x00FF;
+  ppCMD1(16, 0x33, param1, param2);
+
+  // speed = int((speed*1023/100)+0.5)
+  //   if ((motor==1) or (motor==2)):
+  //       speed=(speed*5)>>3
+  //   ## Param1:|motor num 1|motor num 0|NA|direction|NA|NA|dc9|dc8|
+  //   param1=(motor-1)<<6
+  //   param1=param1+(speed>>8)
+  //   param2= speed & 0x00FF
+  //   ppCMDm(addr,0x33,param1,param2,0)
+}
+
 void setup() {
   if (gpioInitialise() < 0) {
     printf("Failed to initialize pigpio\n");
     return;
   }
+  ts.tv_sec = 0;
+  ts.tv_nsec = 300000;
 
   // Set up GPIO
   gpioSetMode(PP_FRAME, PI_OUTPUT);
@@ -36,36 +121,57 @@ void setup() {
   spiHandle = spiOpen(SPI_CHANNEL, SPI_BAUD, 0);
   if (spiHandle < 0) {
     printf("Failed to open SPI\n");
+  } else {
+    // ppCMD1(16, 0, 0, 0);
+    // ppCMD1(16, 48, 1, 64); // setup
+    // ppCMD1(16, 58, 0, 66); // setup
   }
 }
 
-// Equivalent to ppCMD1()
-void ppCMD1(int addr, int cmd, int param1, int param2) {
-  unsigned char arg[4] = {addr, cmd, param1, param2};
-  unsigned char resp[4] = {0}; // Unused, but could store response
+void enableRawMode() {
+  struct termios tty;
+  tcgetattr(STDIN_FILENO, &tty);          // Get current terminal attributes
+  tty.c_lflag &= ~(ICANON | ECHO);        // Disable canonical mode & echo
+  tcsetattr(STDIN_FILENO, TCSANOW, &tty); // Apply changes
+}
 
-  gpioWrite(PP_FRAME, 1); // FRAME high
-  printf("Sending args: %d %d %d %d\n", arg[0], arg[1], arg[2], arg[3]);
+void disableRawMode() {
+  struct termios tty;
+  tcgetattr(STDIN_FILENO, &tty);
+  tty.c_lflag |= (ICANON | ECHO); // Restore settings
+  tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+}
 
-  spiXfer(spiHandle, (char *)arg, (char *)resp, 4); // 4-byte SPI transfer
+void run() {
 
-  gpioWrite(PP_FRAME, 0); // FRAME low
-  usleep(3000);           // Delay (0.0003 sec)
+  enableRawMode();
+  char input;
+  while (true) {
+    input = getchar();
+    if (input == 'a') {
+      printf("Motor starting \n");
+      start(0);
+    }
+    if (input == 's') {
+      printf("Motor stopping \n");
+      stop(0);
+    }
+    if (isdigit(input)) {
+      printf("Setting speed to %c0%%! \n", input);
+      speed(0, (double)((input - 0) * 10));
+    }
+    if (input == 'd') {
+      printf("Closing program, goodbye! \n");
+      break;
+    }
+  }
+  disableRawMode();
 }
 
 int main() {
   setup();
-
-  if (spiHandle >= 0) {
-    ppCMD1(16, 0, 0, 0);
-    ppCMD1(16, 48, 1, 64); // setup
-    ppCMD1(16, 58, 0, 66); // setup
-    ppCMD1(16, 49, 0, 0);  // start
-    sleep(5);
-    ppCMD1(16, 50, 0, 0); // stop
-    spiClose(spiHandle);
-  }
-
+  run();
+  spiClose(spiHandle);
   gpioTerminate();
   return 0;
 }
