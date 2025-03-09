@@ -31,12 +31,10 @@ void ppCMD1(int addr, int cmd, int param1, int param2) {
 
   gpioWrite(PP_FRAME, 0);    // FRAME low
   nanosleep(&ts_0003, NULL); // Delay (0.0003 sec)
-  printf("return = %s \n", resp);
+  // printf("return = %s \n", resp);
 }
 
 void setup_motor(int motor, double speed, int acceleration, char *dir) {
-  ppCMD1(16, 48, 1, 64); // setup
-  ppCMD1(16, 58, 0, 66); // setup
 
   int param1;
   int param2;
@@ -68,16 +66,17 @@ void setup_motor(int motor, double speed, int acceleration, char *dir) {
 }
 
 void start_motor(int motor) {
-  ppCMD1(16, 49, 0, 0); // start
+  ppCMD1(16, 49, motor, 0); // start
 }
 
 void stop_motor(int motor) {
-  ppCMD1(16, 50, 0, 0); // stop
+  ppCMD1(16, 50, motor, 0); // stop
 }
 
 void motor_speed(int motor, double speed) {
   int param1;
   int param2;
+  printf("Speed = %f \n", speed);
   int motorSpeed = (int)((speed * 1023 / 100) + 0.5);
   if (motor == 0 || motor == 1) {
     motorSpeed = (motorSpeed * 5) >> 3;
@@ -86,6 +85,7 @@ void motor_speed(int motor, double speed) {
   param1 += (motorSpeed >> 8);
   param2 = motorSpeed & 0x00FF;
   ppCMD1(16, 0x33, param1, param2);
+  nanosleep(&ts_001, NULL); // Delay (0.0003 sec) UPDATE TO .001
 
   // speed = int((speed*1023/100)+0.5)
   //   if ((motor==1) or (motor==2)):

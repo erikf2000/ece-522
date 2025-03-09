@@ -2,10 +2,11 @@
 #include <motor_control.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
 
-#define NUM_MOTORS 1
+#define NUM_MOTORS 4
 
 void enableRawMode() {
   struct termios tty;
@@ -36,15 +37,24 @@ void run() {
     input = getchar();
     if (input == 'a') {
       printf("Motor starting \n");
-      start_motor(0);
+      for (int motor = 0; motor < NUM_MOTORS; motor++) {
+        start_motor(motor);
+      }
+      // start_motor(0);
     }
     if (input == 's') {
       printf("Motor stopping \n");
-      stop_motor(0);
+      for (int motor = 0; motor < NUM_MOTORS; motor++) {
+        stop_motor(motor);
+      }
+      // stop_motor(0);
     }
     if (isdigit(input)) {
       printf("Setting speed to %c0%%! \n", input);
-      motor_speed(0, (double)((input - 0) * 10));
+      for (int motor = 0; motor < NUM_MOTORS; motor++) {
+        motor_speed(motor, (double)(atof(&input) * 10));
+      }
+      // motor_speed(0, (double)((input - 0) * 10));
     }
     if (input == 'd') {
       printf("Closing program, goodbye! \n");

@@ -123,8 +123,8 @@ void setup() {
     printf("Failed to open SPI\n");
   } else {
     // ppCMD1(16, 0, 0, 0);
-    // ppCMD1(16, 48, 1, 64); // setup
-    // ppCMD1(16, 58, 0, 66); // setup
+    ppCMD1(16, 48, 1, 64); // setup
+    ppCMD1(16, 58, 0, 66); // setup
   }
 }
 
