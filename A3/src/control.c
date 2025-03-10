@@ -1,5 +1,5 @@
+#include "motor.h"
 #include <ctype.h>
-#include <motor_control.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +29,27 @@ void setup(double speed, int acceleration, char *dir) {
   }
 }
 
-void run() {
+void turn(bool left, double speed) {
+  int offset = (int)left;
+  for (int motor = offset; motor < NUM_MOTORS; motor += 2) {
+    motor_speed(motor, -speed);
+  }
+}
+
+void circle(bool left, double speed) {
+  int offset = (int)left;
+  for (int motor = offset; motor < NUM_MOTORS; motor += 2) {
+    motor_speed(motor, speed / 2);
+  }
+}
+
+void reverse(double speed) {
+  for (int motor = 0; motor < NUM_MOTORS; motor++) {
+    motor_speed(motor, -speed);
+  }
+}
+
+void enable_motors() {
 
   enableRawMode();
   char input;
@@ -40,21 +60,18 @@ void run() {
       for (int motor = 0; motor < NUM_MOTORS; motor++) {
         start_motor(motor);
       }
-      // start_motor(0);
     }
     if (input == 's') {
       printf("Motor stopping \n");
       for (int motor = 0; motor < NUM_MOTORS; motor++) {
         stop_motor(motor);
       }
-      // stop_motor(0);
     }
     if (isdigit(input)) {
       printf("Setting speed to %c0%%! \n", input);
       for (int motor = 0; motor < NUM_MOTORS; motor++) {
         motor_speed(motor, (double)(atof(&input) * 10));
       }
-      // motor_speed(0, (double)((input - 0) * 10));
     }
     if (input == 'd') {
       printf("Closing program, goodbye! \n");
