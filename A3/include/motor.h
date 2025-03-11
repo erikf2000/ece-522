@@ -1,9 +1,9 @@
-
+#include <stdbool.h>
 // initialize connection to GPIO to enable motor control
 void start_GPIO_connection();
 
 // setup rover with inital speed and acceleration percentages
-void setup_motor(int motor, double speed, int acceleration, char *dir);
+void setup_motor(int motor, double speed, int acceleration, bool reverse);
 
 // start given motor
 void start_motor(int motor);

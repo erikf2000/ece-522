@@ -38,7 +38,7 @@ void send_video(char *client_ip) {
   client_addr.sin_port = htons(PORT);
   inet_pton(client_addr.sin_family, client_ip, &client_addr.sin_addr);
 
-  stream = popen("libcamera-vid -t 0 --inline -n -o -", "r");
+  stream = popen("libcamera-vid -t 0 --inline --vflip --hflip -n -o -", "r");
   if (!stream) {
     perror("Failed to open video stream");
     exit(EXIT_FAILURE);

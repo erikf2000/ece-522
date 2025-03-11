@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <pigpio.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -33,7 +34,7 @@ void ppCMD1(int addr, int cmd, int param1, int param2) {
   nanosleep(&ts_0003, NULL); // Delay (0.0003 sec)
 }
 
-void setup_motor(int motor, double speed, int acceleration, char *dir) {
+void setup_motor(int motor, double speed, int acceleration, bool reverse) {
 
   int param1;
   int param2;
@@ -44,7 +45,7 @@ void setup_motor(int motor, double speed, int acceleration, char *dir) {
   }
 
   param1 = motor << 6;
-  if (strncmp(dir, "cw", 3) == 0) {
+  if (!reverse) {
     param1 = param1 + 0x10;
   }
   param1 += (motorSpeed >> 8);
