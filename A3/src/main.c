@@ -21,7 +21,7 @@ int main() {
     int status;
     waitpid(pid, &status, 0);
   } else { // child
-    setup(.5, 0, "w");
+    setup(40, 0, "w");
     enable_motors();
     cleanup();
 
