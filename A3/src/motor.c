@@ -25,7 +25,6 @@ void ppCMD1(int addr, int cmd, int param1, int param2) {
   unsigned char resp[4] = {0};
 
   gpioWrite(PP_FRAME, 1); // FRAME high
-  printf("Sending args: %d %d %d %d\n", arg[0], arg[1], arg[2], arg[3]);
 
   spiXfer(spiHandle, (char *)arg, (char *)resp, 4); // 4-byte SPI transfer
   gpioDelay(40);
@@ -61,8 +60,7 @@ void setup_motor(int motor, double speed, int acceleration, bool reverse) {
   param1 = (increment >> 8);
   param2 = increment & 0x00FF;
 
-  ppCMD1(16, 0x3A + motor, param1, param2); // update speed
-  nanosleep(&ts_001, NULL);                 // Delay (0.001 sec)
+  ppCMD1(16, 0x3A + motor, param1, param2);
 }
 
 void start_motor(int motor) {
@@ -76,7 +74,6 @@ void stop_motor(int motor) {
 void motor_speed(int motor, double speed) {
   int param1;
   int param2;
-  printf("Speed = %f \n", speed);
   int motorSpeed = (int)((speed * 1023 / 100) + 0.5);
   if (motor == 0 || motor == 1) {
     motorSpeed = (motorSpeed * 5) >> 3;
@@ -85,7 +82,7 @@ void motor_speed(int motor, double speed) {
   param1 += (motorSpeed >> 8);
   param2 = motorSpeed & 0x00FF;
   ppCMD1(16, 0x33, param1, param2);
-  nanosleep(&ts_001, NULL); // Delay (0.0003 sec) UPDATE TO .001
+  nanosleep(&ts_001, NULL); // Delay .001 sec
 }
 
 void start_GPIO_connection() {
@@ -96,7 +93,7 @@ void start_GPIO_connection() {
 
   // Set up GPIO
   gpioSetMode(PP_FRAME, PI_OUTPUT);
-  gpioWrite(PP_FRAME, 0); // Initialize FRAME signal
+  gpioWrite(PP_FRAME, 0);
 
   gpioSetMode(PP_INT, PI_INPUT);
   gpioSetPullUpDown(PP_INT, PI_PUD_UP);
@@ -107,7 +104,6 @@ void start_GPIO_connection() {
   gpioSetMode(PP_SW, PI_INPUT);
   gpioSetPullUpDown(PP_SW, PI_PUD_UP);
 
-  // Open SPI channel 1 (same as spidev 0,1)
   spiHandle = spiOpen(SPI_CHANNEL, SPI_BAUD, 0);
   if (spiHandle < 0) {
     printf("Failed to open SPI\n");

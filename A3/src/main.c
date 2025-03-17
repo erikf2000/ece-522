@@ -16,17 +16,18 @@ int main() {
     perror("Fork failed");
     exit(EXIT_FAILURE);
   } else if (pid) { // parent
-    send_video(CLIENT_IP);
+    send_camera_data(CLIENT_IP);
     pause();
     int status;
     waitpid(pid, &status, 0);
-  } else { // child
-    setup(40, 0, "w");
-    enable_motors();
+  } else {        // child
+    setup(40, 0); // good speed value for motor control.
+    receive_commands();
     cleanup();
 
     printf("Rover shutting down, terminating program...\n");
     kill(getppid(), SIGTERM);
+    sleep(3);
     exit(EXIT_SUCCESS);
   }
   return 0;
