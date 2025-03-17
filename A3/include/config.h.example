@@ -1,0 +1,10 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define CLIENT_IP "000.000.0.00"
+#define CONTROL_PORT 8080
+#define VIDEO_PORT 8081
+#define PHOTO_PORT 8082
+#define PHOTO_PATH "temp_photo.jpg"
+
+#endif
